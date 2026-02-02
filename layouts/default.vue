@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-neutral-950 flex">
+  <div class="min-h-screen bg-neutral-800 flex">
     <AdminSidebar />
     <div class="flex-1 flex flex-col ml-64">
       <AdminHeader :title="pageTitle" :subtitle="pageSubtitle" />

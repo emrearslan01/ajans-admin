@@ -1,5 +1,5 @@
 <template>
-  <aside class="fixed left-0 top-0 h-screen w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col z-50">
+  <aside class="fixed left-0 top-0 h-screen w-64 bg-neutral-900 border-r border-neutral-800 flex flex-col z-50">
     <!-- Logo -->
     <div class="p-6 border-b border-neutral-800">
       <div class="flex items-center gap-3">
@@ -110,7 +110,7 @@
 
     <!-- Footer -->
     <div class="p-4 border-t border-neutral-800">
-      <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-900/50">
+      <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50">
         <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-glow">
           <span class="text-xs font-bold text-white">A</span>
         </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-neutral-950 flex items-center justify-center p-6">
+  <div class="min-h-screen bg-neutral-800 flex items-center justify-center p-6">
     <div class="w-full max-w-md">
       <!-- Logo/Title -->
       <div class="text-center mb-8">
