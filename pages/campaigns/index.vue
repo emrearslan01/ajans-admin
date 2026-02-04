@@ -95,7 +95,17 @@
             <div>Tasks: {{ campaign.fulfillment_tasks?.length || 0 }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <NuxtLink :to="`/campaigns/${campaign.id}`" class="text-primary-400 hover:text-primary-300">View</NuxtLink>
+            <select
+              :value="campaign.status"
+              @change="updateCampaignStatus(campaign.id, $event)"
+              class="input-field text-sm py-1 px-2"
+            >
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+            </select>
+            <NuxtLink :to="`/campaigns/${campaign.id}`" class="text-primary-400 hover:text-primary-300 text-sm">View</NuxtLink>
           </div>
         </div>
       </div>
@@ -137,7 +147,7 @@ const statusFilter = ref('')
 const platformFilter = ref('')
 const pagination = ref<any>(null)
 
-const { getCampaigns, getStats } = useCampaigns()
+const { getCampaigns, getStats, updateStatus } = useCampaigns()
 
 const getStatusBadgeClass = (status: string) => {
   const classes: Record<string, string> = {
@@ -190,6 +200,22 @@ const loadStats = async () => {
 const changePage = (page: number) => {
   if (page >= 1 && page <= (pagination.value?.last_page || 1)) {
     loadCampaigns(page)
+  }
+}
+
+const updateCampaignStatus = async (campaignId: number, event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const newStatus = target.value
+  
+  try {
+    await updateStatus(campaignId, newStatus)
+    await loadCampaigns(pagination.value?.current_page || 1)
+    await loadStats()
+  } catch (err: any) {
+    alert(err.message || 'Failed to update campaign status')
+    console.error('Error updating campaign status:', err)
+    // Reload to reset dropdown
+    await loadCampaigns(pagination.value?.current_page || 1)
   }
 }
 

@@ -1,12 +1,5 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-white">Users</h1>
-        <p class="text-neutral-400 mt-1">Manage all user accounts and permissions</p>
-      </div>
-    </div>
-
     <!-- Filters -->
     <div class="card p-4 mb-6">
       <div class="flex flex-wrap items-center gap-4">
@@ -57,7 +50,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Campaigns</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Joined</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-neutral-400 uppercase tracking-wider">Actions</th>
+
             </tr>
           </thead>
           <tbody class="divide-y divide-neutral-800">
@@ -98,9 +91,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                 {{ formatDate(user.created_at) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <NuxtLink :to="`/users/${user.id}`" class="text-primary-400 hover:text-primary-300 mr-4">View</NuxtLink>
-              </td>
+
             </tr>
           </tbody>
         </table>

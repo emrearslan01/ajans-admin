@@ -15,6 +15,20 @@
       </div>
     </div>
 
+    <!-- Digital Clock -->
+    <div class="px-6 py-4 border-b border-neutral-800">
+      <div class="px-4 py-4 rounded-lg bg-gradient-to-br from-neutral-900/80 to-neutral-800/80 border border-neutral-800/50 backdrop-blur-sm">
+        <div class="flex flex-col items-center justify-center space-y-1">
+          <div class="text-2xl font-mono font-bold text-primary-400 tabular-nums">
+            {{ currentTime }}
+          </div>
+          <div class="text-xs text-neutral-400 font-medium">
+            {{ currentDate }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto p-4 space-y-1">
       <NuxtLink
@@ -108,21 +122,115 @@
       </NuxtLink>
     </nav>
 
-    <!-- Footer -->
+    <!-- Footer - User Menu -->
     <div class="p-4 border-t border-neutral-800">
-      <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50">
-        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-glow">
-          <span class="text-xs font-bold text-white">A</span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-white truncate">Admin User</p>
-          <p class="text-xs text-neutral-400 truncate">admin@novusdv.com</p>
-        </div>
+      <!-- User Menu -->
+      <div class="relative" ref="menuRef">
+        <button
+          @click="toggleMenu"
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-800/50 border border-neutral-800 hover:bg-neutral-800 hover:border-primary-500/50 transition-all cursor-pointer"
+        >
+          <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-glow ring-2 ring-primary-500/30 flex-shrink-0">
+            <span class="text-sm font-bold text-white">{{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}</span>
+          </div>
+          <div class="flex-1 min-w-0 text-left">
+            <p class="text-sm font-medium text-white truncate">{{ user?.name || 'Admin User' }}</p>
+            <p class="text-xs text-neutral-400 truncate">{{ user?.email || 'Administrator' }}</p>
+          </div>
+          <svg 
+            class="w-4 h-4 text-neutral-400 transition-transform flex-shrink-0"
+            :class="{ 'rotate-180': isOpen }"
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        <!-- Dropdown Menu -->
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="transform scale-95 opacity-0"
+          enter-to-class="transform scale-100 opacity-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="transform scale-100 opacity-100"
+          leave-to-class="transform scale-95 opacity-0"
+        >
+          <div 
+            v-if="isOpen"
+            class="absolute bottom-full left-0 right-0 mb-2 w-full bg-neutral-900/95 backdrop-blur-md border border-neutral-800 rounded-xl shadow-2xl overflow-hidden"
+          >
+            <div class="py-2">
+              <div class="px-4 py-3 border-b border-neutral-800 bg-neutral-800/50">
+                <p class="text-sm font-medium text-white">{{ user?.name || 'Admin User' }}</p>
+                <p class="text-xs text-neutral-400 mt-0.5">{{ user?.email || 'admin@example.com' }}</p>
+              </div>
+              <button
+                @click="handleLogout"
+                class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 group/item"
+              >
+                <svg class="w-4 h-4 group-hover/item:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-// Sidebar component
+const { user, logout } = useAuth()
+
+const isOpen = ref(false)
+const menuRef = ref<HTMLElement | null>(null)
+const currentTime = ref('')
+const currentDate = ref('')
+
+const updateTime = () => {
+  const now = new Date()
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  currentTime.value = `${hours}:${minutes}:${seconds}`
+  
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayName = days[now.getDay()]
+  const month = months[now.getMonth()]
+  const day = now.getDate()
+  currentDate.value = `${dayName}, ${month} ${day}`
+}
+
+const toggleMenu = () => {
+  isOpen.value = !isOpen.value
+}
+
+const handleLogout = async () => {
+  await logout()
+  isOpen.value = false
+}
+
+// Close menu when clicking outside
+onMounted(() => {
+  updateTime()
+  const timeInterval = setInterval(updateTime, 1000)
+  
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+      isOpen.value = false
+    }
+  }
+  
+  document.addEventListener('click', handleClickOutside)
+  
+  onUnmounted(() => {
+    clearInterval(timeInterval)
+    document.removeEventListener('click', handleClickOutside)
+  })
+})
 </script>

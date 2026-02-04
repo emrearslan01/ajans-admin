@@ -55,6 +55,106 @@
         <p class="text-neutral-400">No plans found. Create your first plan!</p>
       </div>
     </div>
+
+    <!-- Create/Edit Modal -->
+    <div
+      v-if="showCreateModal || editingPlan"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      @click.self="closeModal"
+    >
+      <div class="card p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold text-white">
+            {{ editingPlan ? 'Edit Plan' : 'Create New Plan' }}
+          </h2>
+          <button @click="closeModal" class="text-neutral-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="savePlan" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Plan Name *</label>
+            <input
+              v-model="planForm.name"
+              type="text"
+              required
+              class="input-field w-full"
+              placeholder="e.g., Basic Plan"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Price (USD) *</label>
+            <input
+              v-model.number="planForm.price"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              class="input-field w-full"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Tier *</label>
+            <input
+              v-model="planForm.tier"
+              type="text"
+              required
+              class="input-field w-full"
+              placeholder="e.g., instagram-basic, tiktok-premium"
+            />
+            <p class="text-xs text-neutral-500 mt-1">Format: platform-tier (e.g., instagram-basic)</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Description</label>
+            <textarea
+              v-model="planForm.description"
+              rows="3"
+              class="input-field w-full"
+              placeholder="Plan description..."
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Featured Content Credits</label>
+            <input
+              v-model.number="planForm.featured_content_credits"
+              type="number"
+              min="0"
+              class="input-field w-full"
+              placeholder="0"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Stripe Payment Link</label>
+            <input
+              v-model="planForm.stripe_payment_link"
+              type="url"
+              class="input-field w-full"
+              placeholder="https://buy.stripe.com/..."
+            />
+          </div>
+
+          <div v-if="formError" class="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+            <p class="text-red-400 text-sm">{{ formError }}</p>
+          </div>
+
+          <div class="flex items-center gap-4 pt-4">
+            <button type="submit" class="btn-primary flex-1" :disabled="saving">
+              {{ saving ? 'Saving...' : editingPlan ? 'Update Plan' : 'Create Plan' }}
+            </button>
+            <button type="button" @click="closeModal" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -63,15 +163,27 @@ const plans = ref<any[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showCreateModal = ref(false)
+const editingPlan = ref<any>(null)
+const saving = ref(false)
+const formError = ref<string | null>(null)
 
-const { getPlans, deletePlan: deletePlanApi } = usePlans()
+const planForm = ref({
+  name: '',
+  price: 0,
+  tier: '',
+  description: '',
+  featured_content_credits: 0,
+  stripe_payment_link: '',
+})
+
+const { getAdminPlans, createPlan: createPlanApi, updatePlan: updatePlanApi, deletePlan: deletePlanApi } = usePlans()
 
 const loadPlans = async () => {
   loading.value = true
   error.value = null
   
   try {
-    const response = await getPlans()
+    const response = await getAdminPlans()
     plans.value = response.data
   } catch (err: any) {
     error.value = err.message || 'Failed to load plans'
@@ -82,8 +194,50 @@ const loadPlans = async () => {
 }
 
 const editPlan = (plan: any) => {
-  // TODO: Open edit modal
-  console.log('Edit plan:', plan)
+  editingPlan.value = plan
+  planForm.value = {
+    name: plan.name || '',
+    price: plan.price || 0,
+    tier: plan.tier || '',
+    description: plan.description || '',
+    featured_content_credits: plan.featured_content_credits || 0,
+    stripe_payment_link: plan.stripe_payment_link || '',
+  }
+  showCreateModal.value = true
+}
+
+const closeModal = () => {
+  showCreateModal.value = false
+  editingPlan.value = null
+  formError.value = null
+  planForm.value = {
+    name: '',
+    price: 0,
+    tier: '',
+    description: '',
+    featured_content_credits: 0,
+    stripe_payment_link: '',
+  }
+}
+
+const savePlan = async () => {
+  saving.value = true
+  formError.value = null
+
+  try {
+    if (editingPlan.value) {
+      await updatePlanApi(editingPlan.value.id, planForm.value)
+    } else {
+      await createPlanApi(planForm.value)
+    }
+    await loadPlans()
+    closeModal()
+  } catch (err: any) {
+    formError.value = err.message || 'Failed to save plan'
+    console.error('Error saving plan:', err)
+  } finally {
+    saving.value = false
+  }
 }
 
 const deletePlan = async (id: number) => {

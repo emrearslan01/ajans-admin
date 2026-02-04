@@ -19,9 +19,10 @@
         <select v-model="statusFilter" class="input-field" @change="loadTasks">
           <option value="">All Status</option>
           <option value="pending">Pending</option>
-          <option value="in_progress">In Progress</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
           <option value="completed">Completed</option>
-          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <button @click="loadTasks" class="btn-secondary">Filter</button>
       </div>
@@ -68,7 +69,8 @@
             <span :class="getStatusBadgeClass(task.status)">{{ task.status }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <NuxtLink :to="`/fulfillment-tasks/${task.id}`" class="text-primary-400 hover:text-primary-300">View</NuxtLink>
+            <button @click="editTask(task)" class="text-primary-400 hover:text-primary-300">Edit</button>
+            <button @click="deleteTask(task.id)" class="text-red-400 hover:text-red-300">Delete</button>
           </div>
         </div>
       </div>
@@ -98,6 +100,99 @@
         </div>
       </div>
     </div>
+
+    <!-- Create/Edit Modal -->
+    <div
+      v-if="showCreateModal || editingTask"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      @click.self="closeModal"
+    >
+      <div class="card p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold text-white">
+            {{ editingTask ? 'Edit Task' : 'Create New Task' }}
+          </h2>
+          <button @click="closeModal" class="text-neutral-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="saveTask" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Campaign *</label>
+            <select
+              v-model.number="taskForm.campaign_id"
+              required
+              class="input-field w-full"
+              :disabled="loadingCampaigns"
+            >
+              <option value="">Select Campaign</option>
+              <option v-for="campaign in availableCampaigns" :key="campaign.id" :value="campaign.id">
+                {{ campaign.platform }} - {{ campaign.user?.name || 'Unknown' }} ({{ campaign.profile_url }})
+              </option>
+            </select>
+            <p v-if="loadingCampaigns" class="text-xs text-neutral-500 mt-1">Loading campaigns...</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Service Type *</label>
+            <input
+              v-model="taskForm.service_type"
+              type="text"
+              required
+              class="input-field w-full"
+              placeholder="e.g., followers, likes, views"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Daily Limit *</label>
+            <input
+              v-model.number="taskForm.daily_limit"
+              type="number"
+              min="0"
+              required
+              class="input-field w-full"
+              placeholder="0"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Status *</label>
+            <select v-model="taskForm.status" required class="input-field w-full">
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">Panel Name</label>
+            <input
+              v-model="taskForm.panel_name"
+              type="text"
+              class="input-field w-full"
+              placeholder="Optional panel name"
+            />
+          </div>
+
+          <div v-if="formError" class="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+            <p class="text-red-400 text-sm">{{ formError }}</p>
+          </div>
+
+          <div class="flex items-center gap-4 pt-4">
+            <button type="submit" class="btn-primary flex-1" :disabled="saving">
+              {{ saving ? 'Saving...' : editingTask ? 'Update Task' : 'Create Task' }}
+            </button>
+            <button type="button" @click="closeModal" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -108,8 +203,22 @@ const error = ref<string | null>(null)
 const statusFilter = ref('')
 const pagination = ref<any>(null)
 const showCreateModal = ref(false)
+const editingTask = ref<any>(null)
+const saving = ref(false)
+const formError = ref<string | null>(null)
+const availableCampaigns = ref<any[]>([])
+const loadingCampaigns = ref(false)
 
-const { getTasks } = useFulfillmentTasks()
+const taskForm = ref({
+  campaign_id: null as number | null,
+  service_type: '',
+  daily_limit: 0,
+  status: 'pending',
+  panel_name: '',
+})
+
+const { getTasks, createTask: createTaskApi, updateTask: updateTaskApi, deleteTask: deleteTaskApi } = useFulfillmentTasks()
+const { getCampaigns } = useCampaigns()
 
 const formatDate = (date: string) => {
   if (!date) return 'N/A'
@@ -123,9 +232,10 @@ const formatDate = (date: string) => {
 const getStatusBadgeClass = (status: string) => {
   const classes: Record<string, string> = {
     pending: 'badge badge-warning',
-    in_progress: 'badge badge-info',
-    completed: 'badge badge-success',
-    failed: 'badge badge-danger',
+    active: 'badge badge-success',
+    paused: 'badge badge-warning',
+    completed: 'badge badge-info',
+    cancelled: 'badge badge-danger',
   }
   return classes[status] || 'badge badge-info'
 }
@@ -161,8 +271,80 @@ const changePage = (page: number) => {
   }
 }
 
+const loadAvailableCampaigns = async () => {
+  loadingCampaigns.value = true
+  try {
+    const response = await getCampaigns({ per_page: 100 })
+    availableCampaigns.value = response.data || []
+  } catch (err) {
+    console.error('Error loading campaigns:', err)
+  } finally {
+    loadingCampaigns.value = false
+  }
+}
+
+const editTask = (task: any) => {
+  editingTask.value = task
+  taskForm.value = {
+    campaign_id: task.campaign_id || null,
+    service_type: task.service_type || '',
+    daily_limit: task.daily_limit || 0,
+    status: task.status || 'pending',
+    panel_name: task.panel_name || '',
+  }
+  showCreateModal.value = true
+}
+
+const closeModal = () => {
+  showCreateModal.value = false
+  editingTask.value = null
+  formError.value = null
+  taskForm.value = {
+    campaign_id: null,
+    service_type: '',
+    daily_limit: 0,
+    status: 'pending',
+    panel_name: '',
+  }
+}
+
+const saveTask = async () => {
+  saving.value = true
+  formError.value = null
+
+  try {
+    if (editingTask.value) {
+      await updateTaskApi(editingTask.value.id, taskForm.value)
+    } else {
+      await createTaskApi(taskForm.value)
+    }
+    await loadTasks(pagination.value?.current_page || 1)
+    closeModal()
+  } catch (err: any) {
+    formError.value = err.message || 'Failed to save task'
+    console.error('Error saving task:', err)
+  } finally {
+    saving.value = false
+  }
+}
+
+const deleteTask = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this task?')) {
+    return
+  }
+  
+  try {
+    await deleteTaskApi(id)
+    await loadTasks(pagination.value?.current_page || 1)
+  } catch (err: any) {
+    alert(err.message || 'Failed to delete task')
+    console.error('Error deleting task:', err)
+  }
+}
+
 onMounted(() => {
   loadTasks()
+  loadAvailableCampaigns()
 })
 
 useHead({
