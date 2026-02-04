@@ -112,10 +112,10 @@ const handleLogin = async () => {
 
 // Redirect if already logged in
 onMounted(async () => {
-  const { isAuthenticated, me } = useAuth()
+  const { isAuthenticated, isAdmin, me } = useAuth()
   try {
     await me()
-    if (isAuthenticated.value) {
+    if (isAuthenticated.value && isAdmin.value) {
       await router.push('/')
     }
   } catch {
@@ -124,7 +124,8 @@ onMounted(async () => {
 })
 
 definePageMeta({
-  layout: false
+  layout: false,
+  middleware: []
 })
 
 useHead({
