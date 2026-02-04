@@ -107,7 +107,12 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
         </svg>
         <span>Tickets</span>
-        <span class="ml-auto px-2 py-0.5 text-xs font-medium bg-primary-500/20 text-primary-400 rounded-full">12</span>
+        <span 
+          v-if="openTicketsCount > 0"
+          class="ml-auto px-2 py-0.5 text-xs font-medium bg-primary-500/20 text-primary-400 rounded-full"
+        >
+          {{ openTicketsCount }}
+        </span>
       </NuxtLink>
 
       <NuxtLink
@@ -185,11 +190,13 @@
 
 <script setup lang="ts">
 const { user, logout } = useAuth()
+const { getStats } = useTickets()
 
 const isOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
 const currentTime = ref('')
 const currentDate = ref('')
+const openTicketsCount = ref(0)
 
 const updateTime = () => {
   const now = new Date()
@@ -215,10 +222,25 @@ const handleLogout = async () => {
   isOpen.value = false
 }
 
+// Load ticket stats
+const loadTicketStats = async () => {
+  try {
+    const response = await getStats()
+    openTicketsCount.value = response.data?.open || 0
+  } catch (err) {
+    console.error('Error loading ticket stats:', err)
+    openTicketsCount.value = 0
+  }
+}
+
 // Close menu when clicking outside
 onMounted(() => {
   updateTime()
   const timeInterval = setInterval(updateTime, 1000)
+  loadTicketStats()
+  
+  // Refresh ticket count every 30 seconds
+  const ticketInterval = setInterval(loadTicketStats, 30000)
   
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
@@ -230,6 +252,7 @@ onMounted(() => {
   
   onUnmounted(() => {
     clearInterval(timeInterval)
+    clearInterval(ticketInterval)
     document.removeEventListener('click', handleClickOutside)
   })
 })

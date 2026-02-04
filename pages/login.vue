@@ -69,13 +69,7 @@
         </form>
 
         <!-- Info -->
-        <div class="mt-6 p-4 bg-neutral-900/50 rounded-lg border border-neutral-800">
-          <p class="text-xs text-neutral-400">
-            <strong class="text-neutral-300">Default Admin:</strong><br>
-            Email: admin@example.com<br>
-            Password: admin123
-          </p>
-        </div>
+
       </div>
     </div>
   </div>
