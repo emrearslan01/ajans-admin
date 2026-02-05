@@ -50,7 +50,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Campaigns</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Joined</th>
-
+              <th class="px-6 py-3 text-right text-xs font-medium text-neutral-400 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-neutral-800">
@@ -91,7 +91,14 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                 {{ formatDate(user.created_at) }}
               </td>
-
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <NuxtLink 
+                  :to="`/users/${user.id}`" 
+                  class="text-primary-400 hover:text-primary-300 text-sm font-medium"
+                >
+                  View
+                </NuxtLink>
+              </td>
             </tr>
           </tbody>
         </table>
