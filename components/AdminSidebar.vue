@@ -77,6 +77,23 @@
       </NuxtLink>
 
       <NuxtLink
+        to="/content-boosts"
+        class="sidebar-link"
+        :class="{ active: $route.path.startsWith('/content-boosts') }"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span>Content Boosts</span>
+        <span 
+          v-if="pendingBoostsCount > 0"
+          class="ml-auto px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full"
+        >
+          {{ pendingBoostsCount }}
+        </span>
+      </NuxtLink>
+
+      <NuxtLink
         to="/plans"
         class="sidebar-link"
         :class="{ active: $route.path.startsWith('/plans') }"
@@ -191,12 +208,14 @@
 <script setup lang="ts">
 const { user, logout } = useAuth()
 const { getStats } = useTickets()
+const { getStats: getContentBoostStats } = useContentBoosts()
 
 const isOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
 const currentTime = ref('')
 const currentDate = ref('')
 const openTicketsCount = ref(0)
+const pendingBoostsCount = ref(0)
 
 const updateTime = () => {
   const now = new Date()
@@ -233,14 +252,33 @@ const loadTicketStats = async () => {
   }
 }
 
+// Load content boost stats
+const loadContentBoostStats = async () => {
+  try {
+    const response = await getContentBoostStats()
+    pendingBoostsCount.value = response.data?.pending || 0
+  } catch (err) {
+    console.error('Error loading content boost stats:', err)
+    pendingBoostsCount.value = 0
+  }
+}
+
+// Intervals
+let timeInterval: NodeJS.Timeout | null = null
+let ticketInterval: NodeJS.Timeout | null = null
+let boostInterval: NodeJS.Timeout | null = null
+
 // Close menu when clicking outside
 onMounted(() => {
   updateTime()
-  const timeInterval = setInterval(updateTime, 1000)
+  timeInterval = setInterval(updateTime, 1000)
   loadTicketStats()
+  loadContentBoostStats()
   
   // Refresh ticket count every 30 seconds
-  const ticketInterval = setInterval(loadTicketStats, 30000)
+  ticketInterval = setInterval(loadTicketStats, 30000)
+  // Refresh content boost count every 30 seconds
+  boostInterval = setInterval(loadContentBoostStats, 30000)
   
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
@@ -251,8 +289,9 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   
   onUnmounted(() => {
-    clearInterval(timeInterval)
-    clearInterval(ticketInterval)
+    if (timeInterval) clearInterval(timeInterval)
+    if (ticketInterval) clearInterval(ticketInterval)
+    if (boostInterval) clearInterval(boostInterval)
     document.removeEventListener('click', handleClickOutside)
   })
 })

@@ -1,7 +1,7 @@
 <template>
   <div class="p-6 space-y-6">
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
       <div class="stat-card">
         <div class="flex items-center justify-between mb-4">
           <div class="p-3 bg-primary-500/20 rounded-lg">
@@ -64,9 +64,24 @@
           </div>
         </div>
         <h3 class="text-sm font-medium text-neutral-400 mb-1">Open Tickets</h3>
-        <p class="text-3xl font-bold text-white">0</p>
+        <p class="text-3xl font-bold text-white">{{ openTicketsCount || 0 }}</p>
         <p class="text-xs text-neutral-500 mt-2">
           <NuxtLink to="/tickets" class="text-primary-400 hover:text-primary-300">View all →</NuxtLink>
+        </p>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="p-3 bg-primary-500/20 rounded-lg">
+            <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        </div>
+        <h3 class="text-sm font-medium text-neutral-400 mb-1">Pending Boosts</h3>
+        <p class="text-3xl font-bold text-white">{{ contentBoostsStats?.pending || 0 }}</p>
+        <p class="text-xs text-neutral-500 mt-2">
+          <NuxtLink to="/content-boosts" class="text-primary-400 hover:text-primary-300">View all →</NuxtLink>
         </p>
       </div>
     </div>
@@ -193,6 +208,21 @@
             <h3 class="font-medium text-white text-sm">New Task</h3>
             <p class="text-xs text-neutral-400 mt-1">Assign fulfillment</p>
           </NuxtLink>
+
+          <NuxtLink
+            to="/content-boosts"
+            class="p-4 bg-neutral-800/50 rounded-lg border border-neutral-800 hover:border-primary-500 hover:bg-neutral-800 transition-all group"
+          >
+            <div class="flex items-center gap-3 mb-2">
+              <div class="p-2 bg-primary-500/20 rounded-lg group-hover:bg-primary-500/30 transition-colors">
+                <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="font-medium text-white text-sm">Content Boosts</h3>
+            <p class="text-xs text-neutral-400 mt-1">Manage boosts</p>
+          </NuxtLink>
         </div>
       </div>
 
@@ -239,10 +269,14 @@ const loading = ref(false)
 const loadingRecent = ref(false)
 const loadingActivity = ref(false)
 const pendingTasksCount = ref(0)
+const openTicketsCount = ref(0)
+const contentBoostsStats = ref<any>(null)
 
 const { getDashboardStats, getRecentSubscriptions } = useDashboard()
 const { getLogs } = useActivityLogs()
 const { getTasks } = useFulfillmentTasks()
+const { getStats: getTicketsStats } = useTickets()
+const { getStats: getContentBoostsStats } = useContentBoosts()
 
 // Helper functions
 const getInitials = (name: string) => {
@@ -311,6 +345,24 @@ const loadDashboard = async () => {
       pendingTasksCount.value = tasksResponse.meta?.total || 0
     } catch (err) {
       console.error('Error loading pending tasks:', err)
+    }
+
+    // Load open tickets count
+    try {
+      const ticketsResponse = await getTicketsStats()
+      openTicketsCount.value = ticketsResponse.data?.open || 0
+    } catch (err) {
+      console.error('Error loading tickets stats:', err)
+      openTicketsCount.value = 0
+    }
+
+    // Load content boosts stats
+    try {
+      const boostsResponse = await getContentBoostsStats()
+      contentBoostsStats.value = boostsResponse.data || {}
+    } catch (err) {
+      console.error('Error loading content boosts stats:', err)
+      contentBoostsStats.value = {}
     }
   } catch (err: any) {
     console.error('Error loading dashboard:', err)
