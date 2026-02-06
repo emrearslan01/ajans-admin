@@ -83,29 +83,29 @@
           </thead>
           <tbody class="divide-y divide-neutral-800">
             <tr
-              v-for="campaign in campaigns"
-              :key="campaign.id"
+          v-for="campaign in campaigns"
+          :key="campaign.id"
               class="hover:bg-neutral-800/30 transition-colors"
-            >
+        >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="p-2 bg-brown-500/20 rounded-lg">
                     <svg class="w-5 h-5 text-brown-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    </svg>
-                  </div>
-                  <div>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+              </svg>
+            </div>
+            <div>
                     <div class="text-sm font-medium text-white">{{ campaign.platform || 'N/A' }} Campaign</div>
                     <div class="text-xs text-neutral-500 mt-1">{{ campaign.profile_url || 'No profile URL' }}</div>
-                  </div>
-                </div>
+            </div>
+          </div>
               </td>
               <td class="px-6 py-4">
                 <div class="text-sm text-neutral-300">{{ campaign.user?.name || 'Unknown User' }}</div>
                 <div class="text-xs text-neutral-500">{{ campaign.user?.email || '' }}</div>
               </td>
               <td class="px-6 py-4">
-                <span :class="getStatusBadgeClass(campaign.status)">{{ campaign.status }}</span>
+            <span :class="getStatusBadgeClass(campaign.status)">{{ campaign.status }}</span>
               </td>
               <td class="px-6 py-4">
                 <div class="text-sm text-neutral-300">{{ campaign.plan?.name || 'N/A' }}</div>
@@ -114,24 +114,24 @@
                 <span class="badge badge-info">{{ campaign.fulfillment_tasks?.length || 0 }}</span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
                   <NuxtLink 
                     :to="`/campaigns/${campaign.id}`" 
                     class="text-primary-400 hover:text-primary-300 text-sm font-medium"
                   >
                     View
                   </NuxtLink>
-                  <select
-                    :value="campaign.status"
-                    @change="updateCampaignStatus(campaign.id, $event)"
-                    class="input-field text-sm py-1 px-2"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
+            <select
+              :value="campaign.status"
+              @change="updateCampaignStatus(campaign.id, $event)"
+              class="input-field text-sm py-1 px-2"
+            >
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
               </td>
             </tr>
           </tbody>
